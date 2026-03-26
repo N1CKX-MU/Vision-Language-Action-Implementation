@@ -2,15 +2,24 @@ import numpy as np
 import pybullet as p 
 
 class ProjectionModule:
+    """
+    Handles the geometric transformation of pixels to 3D world coordinates. 
+    using the intrinsic matrix of the camera and using the pinhole camera model
+    """
     def __init__(self, cam_pos, cam_target, cam_up):
-        """
-        """
         self.cam_pos = cam_pos
         self.cam_target = cam_target
         self.cam_up = cam_up
 
     def pixel_to_camera_frame(self,u: int,v: int,depth: np.ndarray,K: np.ndarray) -> tuple :
         """
+        De-projects a pixel , (u,v) into the Camera's Local Coordinate System
+
+        Math: based on Pinhole Model
+
+        X = (u - cx) * Z / fx
+        Y = (v - cy) * Z / fy
+        Z = depth
 
         """
         Z = float(depth[v,u])
@@ -50,22 +59,22 @@ class ProjectionModule:
         cam_target = np.array(self.cam_target, dtype=np.float64)
         cam_up = np.array(self.cam_up, dtype=np.float64)
 
-        # 1. Calculate camera's forward axis pointing into the scene
+        #  Calculate camera's forward axis pointing into the scene
         forward = cam_target - cam_pos
         forward /= np.linalg.norm(forward)
 
-        # 2. Calculate camera's right axis (+X)
+        #  Calculate camera's right axis (+X)
         right = np.cross(forward, cam_up)
         right /= np.linalg.norm(right)
 
-        # 3. Calculate camera's true up axis
+        #  Calculate camera's true up axis
         up = np.cross(right, forward)
 
-        # 4. Construct Rotation matrix mapping OpenCV axes to World axes
+        #  Construct Rotation matrix mapping OpenCV axes to World axes
         # OpenCV: +X is right, +Y is DOWN (so we use -up), +Z is FORWARD
         R = np.column_stack([right, -up, forward])
 
-        # 5. Rotate the point and add the camera's translation offset
+        #  Rotate the point and add the camera's translation offset
         point_c = np.array([X_c, Y_c, Z_c])
         point_world = R @ point_c + cam_pos
 
@@ -73,7 +82,7 @@ class ProjectionModule:
 
     def get_world_coordinates(self, u : int, v : int, depth : np.ndarray, K : np.ndarray) -> tuple :
         """
-        
+        Wrapper to perform the 2D -> 3D pipeline in one call 
         """
         X_c, Y_c, Z_c = self.pixel_to_camera_frame(u, v, depth, K)
         return self.camera_to_world_frame(X_c, Y_c, Z_c)
@@ -110,6 +119,8 @@ if __name__ == "__main__":
     print(f"{'Object':15s}  {'Pixel (u,v)':15s}  {'Calculated (X, Y)':>18}  {'Expected (X, Y)'}")
     print("-" * 75)
 
+    # Test if the predicted and expected are approximately the same
+    
     for name, (u, v) in test_pixels.items():
         Xw, Yw, Zw = projector.get_world_coordinates(u, v, depth, K)
         ex, ey = expected[name]

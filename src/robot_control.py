@@ -1,15 +1,17 @@
 import time 
 class RobotController:
+    """
+    Manages High level state machine for the different 
+    stages in the robot's manipulation task,
+    Translates 3D coords into a sequence of motions:
+    """
     def __init__(self, env , hover_offset = 0.1 ):
-        """
-
-        """
         self.env = env
         self.hover_offset = hover_offset
 
     def execute_pick_and_place(self, target_3d: tuple, dest_3d: tuple):
         """
-
+        Executes the pick and place task using a sequence of movements
         """
         tx, ty, tz = target_3d
         dx, dy, dz = dest_3d
@@ -30,7 +32,12 @@ class RobotController:
         # descent 
         print(f"[RobotController] Descending to target")
         
-        grasp_height = tz - 0.04
+        grasp_height = tz - 0.03
+        # self.env.move_to_pose(tx, ty, grasp_height)
+        # time.sleep(1)
+
+        mid_height = tz + (self.hover_offset / 2)
+        self.env.move_to_pose(tx, ty, mid_height,wait=False) 
         self.env.move_to_pose(tx, ty, grasp_height)
         time.sleep(1)
         
@@ -39,7 +46,7 @@ class RobotController:
         
         self.env.set_gripper(open=False)
         
-        time.sleep(1)
+        time.sleep(0.5)
         # lift object
 
         print("\n[RobotController] Lifting object")
