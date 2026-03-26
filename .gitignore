@@ -14,7 +14,7 @@ models/**/*.pth
 
 # Environment
 .env
-.claude/
 weights/*.pth
 models/*.pth
-*.mp4.env
+*.mp4
+.env

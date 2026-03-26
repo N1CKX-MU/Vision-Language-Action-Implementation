@@ -67,14 +67,14 @@ class ProjectionModule:
         right = np.cross(forward, cam_up)
         right /= np.linalg.norm(right)
 
-        #  Calculate camera's true up axis
+        #  calculate camera's true up axis
         up = np.cross(right, forward)
 
-        #  Construct Rotation matrix mapping OpenCV axes to World axes
+        #  construct Rotation matrix mapping OpenCV axes to World axes
         # OpenCV: +X is right, +Y is DOWN (so we use -up), +Z is FORWARD
         R = np.column_stack([right, -up, forward])
 
-        #  Rotate the point and add the camera's translation offset
+        #  rotate the point and add the camera's translation offset
         point_c = np.array([X_c, Y_c, Z_c])
         point_world = R @ point_c + cam_pos
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     print("-" * 75)
 
     # Test if the predicted and expected are approximately the same
-    
+
     for name, (u, v) in test_pixels.items():
         Xw, Yw, Zw = projector.get_world_coordinates(u, v, depth, K)
         ex, ey = expected[name]

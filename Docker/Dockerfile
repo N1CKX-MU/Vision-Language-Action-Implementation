@@ -56,10 +56,14 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV CUDA_VISIBLE_DEVICES=0
 
 # --- OLLAMA & LLM INTEGRATION ---
-# 6. Install Ollama Binary (Adding zstd dependency)
-RUN apt-get update && apt-get install -y zstd && \
-    curl -fsSL https://ollama.com/install.sh | sh
+# 6. Install System Dependencies (Separate from Ollama)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    zstd curl wget && \
+    rm -rf /var/lib/apt/lists/*
 
+# 7. Install Ollama Binary with a Timeout/Retry
+# --connect-timeout 10 ensures we don't hang forever
+RUN curl -fsSLv --connect-timeout 10 --retry 5 https://ollama.com/install.sh | sh -x
 # 7. Pre-pull Qwen 2.5 0.5B (Baked into the image)
 # We start the server, wait for it to initialize, pull the 400MB model, then kill it.
 RUN ollama serve & sleep 5 && ollama pull qwen2.5:0.5b

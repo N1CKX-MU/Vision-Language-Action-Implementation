@@ -31,11 +31,10 @@ class PerceptionModule:
         
         Args:
             prompt (str): The natural language command
-            
-        
         Returns:
             ("red cube", "blue bowl")
         """
+
         system_prompt = (
             "You are a robot assistant. "
             "From the instruction, identify: "
@@ -72,7 +71,7 @@ class PerceptionModule:
         """
         Parses the command to extract the target and destination objects.
         works for both active and passive voice sentences and 
-        As of now it is regex based matching as LLM API keys required billing setup and were paid
+        In case the local Ollama API fails it falls back to reg ex
         """
 
         command = command.lower()
@@ -100,8 +99,7 @@ class PerceptionModule:
         img_pil = Image.fromarray(rgb_image)
         image_transformed, _ = self.transform(img_pil, None)
         return image_transformed
-            
-
+    
     def get_grasp_and_place_centroids(self,rgb_image: np.ndarray, command: str, box_threshold=0.3, text_threshold=0.25):
         """
         Performs zero shot detection to find (u,v) pixel coordinates
@@ -181,8 +179,8 @@ if __name__ == "__main__":
     
     # Test Normal Prompt
     prompt_1 = "Pick up the red cube and drop it into the blue bowl"
-    print(f"Testing normal prompt: {perception._parse_prompt(prompt_1)}")
+    print(f"Testing normal prompt: {perception._parse_prompt_ollama(prompt_1)}")
     
     # Test Inverted Prompt
     prompt_2 = "in the blue bowl keep the red cube"
-    print(f"Testing inverted prompt: {perception._parse_prompt(prompt_2)}")
+    print(f"Testing inverted prompt: {perception._parse_prompt_ollama(prompt_2)}")
