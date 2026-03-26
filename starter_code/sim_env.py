@@ -25,8 +25,18 @@ class SimEnv:
             useFixedBase=True,
         )
 
+        self.robot = p.loadURDF("franka_panda/panda.urdf", basePosition=[0.09, 0.0, 0.376 ], useFixedBase=True)
+        
+        # PyBullet specific link indices for the Panda arm
+        self.end_effector_idx = 11  # The tip of the arm between the fingers
+        self.gripper_indices = [9, 10] # The left and right fingers
+
         # Spawn coloured objects
         self.objects = self._spawn_objects()
+
+        home_joints = [-1.57, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785]
+        for i in range(7):
+            p.resetJointState(self.robot, i, home_joints[i])
 
         # Camera intrinsics
         self.K = self._build_K()
@@ -34,7 +44,7 @@ class SimEnv:
         print("[SimEnv] Ready. Objects:", list(self.objects.keys()))
 
     def _build_K(self):
-        fx = fy = (self.IMG_W / 2) / math.tan(math.radians(self.FOV / 2))
+        fx = fy = (self.IMG_H / 2) / math.tan(math.radians(self.FOV / 2))
         cx, cy  = self.IMG_W / 2, self.IMG_H / 2
         return np.array([[fx, 0, cx],
                          [ 0,fy, cy],
@@ -95,12 +105,60 @@ class SimEnv:
         return rgb, depth, self.K
 
     def move_to_pose(self, x, y, z, roll=0, pitch=0, yaw=0):
-        print(f"  [sim] move_to_pose({x:.3f}, {y:.3f}, {z:.3f})")
-        # We'll add real IK here in a later step
-        time.sleep(0.5)
+        print(f"  [sim] Moving arm to ({x:.3f}, {y:.3f}, {z:.3f})")
+        
+        # 1. Define Orientation
+        # For a top-down grasp, the Panda end-effector Z-axis must point straight down.
+        # Euler [pi, 0, 0] flips the hand 180° around X so the fingers face the table.
+        orientation = p.getQuaternionFromEuler([math.pi + roll, pitch, yaw])
+        natural_posture = [0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785]
+
+        # 2. Calculate Inverse Kinematics (IK)
+        joint_poses = p.calculateInverseKinematics(
+            bodyUniqueId=self.robot,
+            endEffectorLinkIndex=self.end_effector_idx,
+            targetPosition=[x, y, z],
+            restPoses=natural_posture,
+            targetOrientation=orientation,
+            maxNumIterations=500,
+            residualThreshold=1e-5
+        )
+
+        # 3. Command the motors to move to those joint angles
+        for i in range(7): 
+            p.setJointMotorControl2(
+                bodyIndex=self.robot,
+                jointIndex=i,
+                controlMode=p.POSITION_CONTROL,
+                targetPosition=joint_poses[i],
+                force=240,
+                maxVelocity=0.8
+            )
+
+        # 4. Step the simulation long enough for the arm to converge
+        for _ in range(480):  # ~2 seconds at 240Hz
+            p.stepSimulation()
+            time.sleep(1./240.)
 
     def set_gripper(self, open: bool):
-        print(f"  [sim] gripper {'open' if open else 'closed'}")
+        print(f"  [sim] Gripper {'opening' if open else 'closing'}...")
+        
+        # Target position for the fingers: 0.04m (open) or 0.0m (closed/pinched)
+        target_pos = 0.04 if open else 0.0 
+
+        for joint_idx in self.gripper_indices:
+            p.setJointMotorControl2(
+                bodyIndex=self.robot,
+                jointIndex=joint_idx,
+                controlMode=p.POSITION_CONTROL,
+                targetPosition=target_pos,
+                force=100 # Gripping force
+            )
+
+        
+        for _ in range(60): 
+            p.stepSimulation()
+            time.sleep(1./240.)
 
     def close(self):
         p.disconnect(self.client)

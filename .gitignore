@@ -8,3 +8,13 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Model weights (too large for git)
+models/**/*.pth
+
+# Environment
+.env
+.claude/
+weights/*.pth
+models/*.pth
+*.mp4.env

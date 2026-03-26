@@ -1,0 +1,64 @@
+# Git
+.git
+.gitignore
+
+# Python virtual environment
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+.uv/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Environment files (will be mounted at runtime)
+.env
+
+# Build artifacts
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Docker files (don't include in build context)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Makefile
+Makefile
+
+# Test and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Models (large files - mount separately if needed)
+# models/*.pth
+# models/*.bin
+
+# Exclude local Grounding DINO build artifacts
+src/groundingdino.egg-info/
+groundingdino.egg-info/
+
+# Temporary files
+*.tmp
+*.bak

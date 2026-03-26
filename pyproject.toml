@@ -1,10 +1,26 @@
 [project]
 name = "vla-task"
 version = "0.1.0"
-description = "Add your description here"
+description = "VLA Pick and Place Task"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.4.3",
-    "pybullet>=3.2.7",
+    "torch==2.5.1+cu121",
+    "torchvision==0.20.1+cu121",
+    "numpy<2",
+    "transformers<=4.39.3",
+    "timm",
+    "supervision",
+    "opencv-python",
+    "pycocotools",
+    "pybullet",
 ]
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu121" }
+torchvision = { index = "pytorch-cu121" }

@@ -9,7 +9,7 @@ import re
 class PerceptionModule:
     def __init__(self, config_path, weight_path , device="cuda" if torch.cuda.is_available() else "cpu"):
         """
-        Initializes VLM 
+        Initializes VLM Which for now is just Grounding Dino 
         """
         print(f"Grounding dino loaded with {device}")
         self.device = device
@@ -22,7 +22,9 @@ class PerceptionModule:
 
     def _parse_prompt(self, command: str) -> tuple :
         """
-
+        Parses the command to extract the target and destination objects.
+        works for both active and passive voice sentences and 
+        As of now it is regex based matching as LLM API keys required billing setup and were paid
         """
 
         command = command.lower()
@@ -47,7 +49,7 @@ class PerceptionModule:
 
         """
         img_pil = Image.fromarray(rgb_image)
-        image_tranformed, _ = self.transform(img_pil, None)
+        image_transformed, _ = self.transform(img_pil, None)
         return image_transformed
             
 
@@ -72,23 +74,47 @@ class PerceptionModule:
         img_h , img_w ,_ = rgb_image.shape
 
         results = {"target": None, "destination": None}
+        best_scores = {"target": -1.0, "destination": -1.0}
 
-        for box, phrase in zip(boxes, phrases):
-            cx_norm, cy_norm , _ , _ = box.numpy()
+        print(f"  [Perception] Parsed: target='{target_obj}', dest='{dest_obj}'")
+        print(f"  [Perception] DINO detections: {len(boxes)} boxes")
+
+        for box, logit, phrase in zip(boxes, logits, phrases):
+            cx_norm, cy_norm, _, _ = box.numpy()
+            score = float(logit)
 
             u = int(cx_norm * img_w)
             v = int(cy_norm * img_h)
 
-            if target_obj in phrase:
-                results["target"] = (u,v)
-            elif dest_obj in phrase:
-                results["destination"] = (u,v)
+            print(f"    Box ({u},{v}) score={score:.3f} phrase='{phrase}'")
+
+            # Check target match (bidirectional substring)
+            is_target = target_obj in phrase or phrase in target_obj
+            # Check destination match
+            is_dest = dest_obj in phrase or phrase in dest_obj
+
+            if is_target and not is_dest and score > best_scores["target"]:
+                results["target"] = (u, v)
+                best_scores["target"] = score
+            elif is_dest and not is_target and score > best_scores["destination"]:
+                results["destination"] = (u, v)
+                best_scores["destination"] = score
+            elif is_target and is_dest:
+                # Ambiguous — assign to whichever role still needs filling or has lower score
+                if best_scores["target"] < best_scores["destination"]:
+                    if score > best_scores["target"]:
+                        results["target"] = (u, v)
+                        best_scores["target"] = score
+                else:
+                    if score > best_scores["destination"]:
+                        results["destination"] = (u, v)
+                        best_scores["destination"] = score
 
         return results
 
 if __name__ == "__main__":
-    CONFIG = "weights/GroundingDINO_SwinT_OGC.py" 
-    WEIGHTS = "weights/groundingdino_swint_ogc.pth"
+    CONFIG = "models/grounding_dino/GroundingDINO_SwinT_OGC.py" 
+    WEIGHTS = "models/grounding_dino/groundingdino_swint_ogc.pth"
     
     perception = PerceptionModule(CONFIG, WEIGHTS)
     
