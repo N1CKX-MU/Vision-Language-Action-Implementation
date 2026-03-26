@@ -24,7 +24,8 @@ CAM_UP = [0, 1, 0]
 class VLAPipeline:
     def __init__(self,config_path: str, weight_path: str, cam_pos: list, cam_target: list, cam_up: list):
         """
-
+        The Controller that integrates Vision(Perception),
+        Geometry(Projection), and Physics (Robot Control) into a single pipeline.
         """
         self.config_path = config_path
         self.weight_path = weight_path
@@ -39,14 +40,14 @@ class VLAPipeline:
 
     def setup_system(self):
         """
-        
+        Initialize the environment and the class modules
         """
         print("\n[Pipeline] Setting up the system")
         self.env = SimEnv(gui=True)
 
         for _ in range(100):
             if self.env and hasattr(self.env, 'client'):
-                p.stepSimulation(self.env.client)# <--- The fix is here
+                p.stepSimulation(self.env.client)
             time.sleep(1./240.)
 
         self.perception = PerceptionModule(self.config_path, self.weight_path)
@@ -55,7 +56,7 @@ class VLAPipeline:
 
     def execute_task(self,prompt :str):
         """
-
+        Main execution loop , executes perception , projection , control in order
         """
 
         print(f"\n{'='*60}")
@@ -103,7 +104,7 @@ class VLAPipeline:
 
     def teardown(self):
         """
-        
+        Safely Kill the environment 
         """
         print("\n[Pipeline] Tearing down the system")
         if self.env:

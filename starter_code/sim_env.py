@@ -210,7 +210,7 @@ class SimEnv:
                 controlMode=p.POSITION_CONTROL,
                 targetPosition=joint_poses[i],
                 force=240,
-                maxVelocity=0.5
+                maxVelocity=0.9
             )
 
         # 4. Step the simulation long enough for the arm to converge
@@ -226,7 +226,7 @@ class SimEnv:
                 # if error < 0.005:  # 5mm tolerance
                 #     break
         else:
-            for _ in range(50):
+            for _ in range(100):
                 p.stepSimulation()
                 time.sleep(1./240.)
 

@@ -4,7 +4,11 @@ from PIL import Image
 import groundingdino.datasets.transforms as T
 from groundingdino.util.inference import load_model, predict
 import re
+import requests
+import json
+import os
 
+OLLAMA_URL = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 class PerceptionModule:
     def __init__(self, config_path, weight_path , device="cuda" if torch.cuda.is_available() else "cpu"):
@@ -20,7 +24,51 @@ class PerceptionModule:
             T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
 
-    def _parse_prompt(self, command: str) -> tuple :
+    def _parse_prompt_ollama(self,prompt: str) -> tuple:
+        """
+        Uses local Ollama qwen 2.5 to parse natural language 
+        prompt into target and destination object names
+        
+        Args:
+            prompt (str): The natural language command
+            
+        
+        Returns:
+            ("red cube", "blue bowl")
+        """
+        system_prompt = (
+            "You are a robot assistant. "
+            "From the instruction, identify: "
+            "1) 'target': the object to be picked up "
+            "2) 'destination': the container or location to place it in. "
+            "The destination is always a bowl, container, or surface. "
+            "Return only a JSON object with exactly two keys: target and destination. "
+            "Values should be simple color+shape descriptions like 'red cube' or 'blue bowl'. "
+                    f"Instruction: {prompt}"
+        )
+        try:
+            resp = requests.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={
+                    "model": "qwen2.5:0.5b",
+                    "prompt": system_prompt,
+                    "stream": False
+                },
+                timeout=30,
+            )
+            raw = resp.json().get("response", "")
+
+            raw= re.sub(r'```[a-z]*',"",raw).strip("`").strip()
+            parsed = json.loads(raw)
+            assert "target" in parsed and "destination" in parsed
+            return parsed["target"], parsed["destination"]
+        
+        except Exception as e:
+            print(f"[Ollama] Failed: {e}, falling back to regex")
+            return self._parse_prompt_regex(prompt)
+        
+
+    def _parse_prompt_regex(self, command: str) -> tuple :
         """
         Parses the command to extract the target and destination objects.
         works for both active and passive voice sentences and 
@@ -46,7 +94,8 @@ class PerceptionModule:
 
     def _preprocess_image(self, rgb_image: np.ndarray):
         """
-
+        Converts Raw numpy(opencv) format images to Pytorch tensor format required
+        by the Transformer 
         """
         img_pil = Image.fromarray(rgb_image)
         image_transformed, _ = self.transform(img_pil, None)
@@ -55,9 +104,15 @@ class PerceptionModule:
 
     def get_grasp_and_place_centroids(self,rgb_image: np.ndarray, command: str, box_threshold=0.3, text_threshold=0.25):
         """
+        Performs zero shot detection to find (u,v) pixel coordinates
         
+        Logic: 
+        1. Parse the commande and get target and destination
+        2. Query Grounding Dino with a prompt like "target_obj . dest_obj"
+        3. Iterate through detections and map them to roles based on the phrase
+        4. Return the (u,v) coordinates of the target and destination
         """
-        target_obj, dest_obj = self._parse_prompt(command)
+        target_obj, dest_obj = self._parse_prompt_ollama(command)
 
         dino_prompt = f"{target_obj} . {dest_obj}"
 
@@ -73,7 +128,7 @@ class PerceptionModule:
 
         img_h , img_w ,_ = rgb_image.shape
 
-        results = {"target": None, "destination": None}
+        results: dict = {"target": None, "destination": None}
         best_scores = {"target": -1.0, "destination": -1.0}
 
         print(f"  [Perception] Parsed: target='{target_obj}', dest='{dest_obj}'")
