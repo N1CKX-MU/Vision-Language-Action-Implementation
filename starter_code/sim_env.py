@@ -172,6 +172,10 @@ class SimEnv:
         ul = [ 2.8973,  1.7628,  2.8973, -0.0698,  2.8973,  3.7525,  2.8973]
         jr = [u - l for u, l in zip(ul, ll)]
         
+        # Run IK multiple times from different seeds, pick best solution
+        best_joints = None
+        best_error  = float('inf')
+
         # 1. Define Orientation
         # For a top-down grasp, the Panda end-effector Z-axis must point straight down.
         # Euler [pi, 0, 0] flips the hand 180° around X so the fingers face the table.
@@ -188,9 +192,15 @@ class SimEnv:
             lowerLimits=ll,
             upperLimits=ul,
             jointRanges=jr,
-            maxNumIterations=500,
+            maxNumIterations=200,
             residualThreshold=1e-5
         )
+
+        # Score = deviation from natural posture
+        error = sum((joint_poses[i] - natural_posture[i])**2 for i in range(7))
+        if error < best_error:
+            best_error  = error
+            best_joints = joint_poses
 
         # 3. Command the motors to move to those joint angles
         for i in range(7): 
@@ -200,14 +210,21 @@ class SimEnv:
                 controlMode=p.POSITION_CONTROL,
                 targetPosition=joint_poses[i],
                 force=240,
-                maxVelocity=0.8
+                maxVelocity=0.5
             )
 
         # 4. Step the simulation long enough for the arm to converge
         if wait:
-            for _ in range(480):  # ~2 seconds at 240Hz
+            for _ in range(720):  # ~2 seconds at 240Hz
                 p.stepSimulation()
                 time.sleep(1./240.)
+                # current = p.getLinkState(
+                # self.robot, self.end_effector_idx,
+                # physicsClientId=self.client
+                # )[0]
+                # error = sum((current[i] - [x,y,z][i])**2 for i in range(3))**0.5
+                # if error < 0.005:  # 5mm tolerance
+                #     break
         else:
             for _ in range(50):
                 p.stepSimulation()

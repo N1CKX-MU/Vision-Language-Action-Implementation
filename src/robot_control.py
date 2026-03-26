@@ -32,7 +32,7 @@ class RobotController:
         # descent 
         print(f"[RobotController] Descending to target")
         
-        grasp_height = tz - 0.03
+        grasp_height = tz - 0.00
         # self.env.move_to_pose(tx, ty, grasp_height)
         # time.sleep(1)
 
