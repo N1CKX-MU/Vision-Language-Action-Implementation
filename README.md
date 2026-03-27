@@ -12,9 +12,9 @@ A modular robotic pipeline that uses open-vocabulary object detection to perform
 
 ---
 
-# 3. Installation & Setup
+# Installation & Setup
 
-## 3.1 Prerequisites
+## Prerequisites
 
 - **Operating System:** Linux (Ubuntu 22.04+ recommended)  
   > Note: Windows users should use WSL2 or the provided Docker configuration.
@@ -27,7 +27,7 @@ A modular robotic pipeline that uses open-vocabulary object detection to perform
 
 ---
 
-## 3.2 Option A: Local Development (Linux/WSL2/On Host)
+## Option A: Local Development (Linux/WSL2/On Host)
 
 ```bash
 
@@ -57,7 +57,7 @@ uv run python run.py --prompt "Pick up the red cube and place it in the blue bow
 
 ```
 
-## 3.2 Option B: Docker (All-in-One Container)
+##  Option B: Docker (All-in-One Container)
 ### Ollama and the LLM weights are pre-configured inside the image.
 
 Prerequisites: Docker, NVIDIA Container Toolkit.
