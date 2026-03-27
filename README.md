@@ -104,11 +104,14 @@ This pipeline emphasizes modularity.
 
 ---
 ## Execution Results:
-### Prompt-> Put the green Cube inside the blue bowl
+```bash
+Prompt-> Put the green Cube inside the blue bowl
+```
 ![run_1](docs/run_1.png.png)
 
-
-### Prompt-> Put the red thingy inside the blue thingy
+```bash
+Prompt-> Inside the blue bowl the red thing must go
+```
 ![run_1](docs/run2.png.png)
 
 
