@@ -109,11 +109,11 @@ This pipeline emphasizes modularity.
 ---
 ## Execution Results:
 ### Prompt-> Put the green Cube inside the blue bowl
-![run_1](Vision-Language-Action-Implementation\docs\run_1.png.png)
+![run_1](docs\run_1.png.png)
 
 
 ### Prompt-> Put the red thingy inside the blue thingy
-![run_1](Vision-Language-Action-Implementation\docs\run2.png.png)
+![run_1](docs\run2.png.png)
 
 
 
