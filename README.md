@@ -12,53 +12,86 @@ A modular robotic pipeline that uses open-vocabulary object detection to perform
 
 ---
 
-## 🚀 Quick Start (Docker - Recommended)
-The easiest way to run the pipeline while avoiding CUDA mismatch issues is via the provided Docker configuration.
+# 3. Installation & Setup
 
-### Prerequisites
-1. [Docker Engine](https://docs.docker.com/engine/install/)
-2. [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) (for GPU acceleration)
+## 3.1 Prerequisites
 
-### Usage
-```bash
-# Allow local X11 connections so the Docker container can open PyBullet windows
-xhost +local:docker
+- **Operating System:** Linux (Ubuntu 22.04+ recommended)  
+  > Note: Windows users should use WSL2 or the provided Docker configuration.
 
-# Build the docker image
-make build
+- **Hardware:** NVIDIA GPU (Minimum 4GB VRAM) with CUDA 12.1+ drivers
 
-# Run the PyBullet simulation dynamically via the Makefile GUI handler
-make run-task PROMPT="Pick up the red cube and place it in the blue bowl"
-```
-*Note: For detailed Docker troubleshooting (headless servers vs GUI), refer to `Docker/DOCKER_README.md`.*
+- **Package Manager:** uv (High-performance Python bundler)
+- **Docker Engine:** (https://docs.docker.com/engine/install/)
+- **NVIDIA Container Toolkit:** (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) (for GPU acceleration)
 
 ---
 
-## 💻 Local Setup (UV Package Manager)
-If you prefer running it locally on your machine, Python 3.12+ and `uv` are recommended.
+## 3.2 Option A: Local Development (Linux/WSL2/On Host)
 
-### Installation
 ```bash
-# Clone the repository
+# 1. Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.cargo/env
+
+# 2. Clone the repository
 git clone https://github.com/N1CKX-MU/Vision-Language-Action-Implementation.git
 cd Vision-Language-Action-Implementation
 
-# Sync the environment using the incredibly fast UV package manager
-uv sync
+# 3. Install Ollama and pull reasoning model
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama pull qwen2.5:0.5b
 
-# Make sure you fetch GroundingDINO without build isolation so its CUDA C++ Extensions compile locally
-uv pip install --no-build-isolation "groundingdino @ git+https://github.com/IDEA-Research/GroundingDINO.git@856dde20aee659246248e20734ef9ba5214f5e44"
+# 4. Sync environment (Note: Requires Python 3.12 or 3.13)
+uv python install 3.12
+uv sync --python 3.12
+
+# 5. Install Grounding DINO (Requires CUDA C++ compilation)
+uv pip install --no-build-isolation \
+  "groundingdino @ git+https://github.com/IDEA-Research/GroundingDINO.git@856dde20aee659246248e20734ef9ba5214f5e44"
+
+# 6. Download Pre-trained Weights
+mkdir -p models/grounding_dino
+wget -P models/grounding_dino/ https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
+wget -P models/grounding_dino/ https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py
+
+# 7. Execute Task
+uv run python run.py --prompt "Pick up the red cube and place it in the blue bowl"
+
 ```
 
-*Note: You may need to download the GroundingDINO Swin-T weights (`groundingdino_swint_ogc.pth`) to `models/grounding_dino/` before running if it's not present.*
+## 3.2 Option B: Docker (All-in-One Container)
+### Ollama and the LLM weights are pre-configured inside the image.
 
-### Usage
-Run the root script with your desired natural language prompt:
-```bash
-uv run python3 run.py --prompt "Pick up the yellow cube and place it in the blue bowl"
+Prerequisites: Docker, NVIDIA Container Toolkit.
+
+```Bash
+# 1. Clone the repo
+git clone [https://github.com/N1CKX-MU/Vision-Language-Action-Implementation.git](https://github.com/N1CKX-MU/Vision-Language-Action-Implementation.git)
+cd Vision-Language-Action-Implementation
+
+# 2. Download model weights (Volume-mounted for speed)
+mkdir -p models/grounding_dino
+wget -O models/grounding_dino/groundingdino_swint_ogc.pth \
+  "[https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth](https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth)"
+wget -O models/grounding_dino/GroundingDINO_SwinT_OGC.py \
+  "[https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py](https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py)"
+
+# 3. Enable GUI forwarding
+xhost +local:docker
+
+# 4. Build the image
+# This compiles CUDA operators and bakes Qwen 2.5 into the image (~15-20 min)
+make build
+
+# 5. Execute the VLA Task
+# The container automatically starts the Ollama server internally
+make run PROMPT="Pick up the red cube and place it in the blue bowl"
+
+# Alternative: Open an interactive shell
+make docker
+
 ```
-
----
 
 ## 📁 System Architecture & Structure
 This pipeline emphasizes modularity.
@@ -72,6 +105,17 @@ This pipeline emphasizes modularity.
 * `urdf/` / `models/` / `Docker/` - Holds 3D mesh blueprints, local model configs, and the dedicated container logic.
 
 ---
+
+---
+## Execution Results:
+### Prompt-> Put the green Cube inside the blue bowl
+![run_1](Vision-Language-Action-Implementation\docs\run_1.png.png)
+
+
+### Prompt-> Put the red thingy inside the blue thingy
+![run_1](Vision-Language-Action-Implementation\docs\run2.png.png)
+
+
 
 ## 🛠️ Modifying the Scene
 To change the items spawned in the PyBullet simulation, modify the `colours` dictionary in `starter_code/sim_env.py` inside the `_spawn_objects` function:
