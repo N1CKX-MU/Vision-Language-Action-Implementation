@@ -37,19 +37,6 @@ class ProjectionModule:
 
         return X, Y, Z
 
-    # def camera_to_world_frame(self, X_c: float, Y_c: float, Z_c: float) -> tuple :
-    #     """
-        
-    #     """
-    #     view = p.computeViewMatrix(self.cam_pos, self.cam_target, self.cam_up)
-    #     V = np.array(view).reshape(4,4)
-    #     V_inv = np.linalg.inv(V)
-
-    #     point_h = np.array([X_c, -Y_c, -Z_c, 1.0])
-    #     world_h = V_inv @ point_h
-
-    #     return float(world_h[0]), float(world_h[1]), float(world_h[2])
-
     def camera_to_world_frame(self, X_c: float, Y_c: float, Z_c: float) -> tuple:
         """
         Converts a point from the OpenCV camera's reference frame to the global simulator frame
