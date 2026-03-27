@@ -67,7 +67,7 @@ Prerequisites: Docker, NVIDIA Container Toolkit.
 
 ```Bash
 # 1. Clone the repo
-git clone [https://github.com/N1CKX-MU/Vision-Language-Action-Implementation.git](https://github.com/N1CKX-MU/Vision-Language-Action-Implementation.git)
+git clone https://github.com/N1CKX-MU/Vision-Language-Action-Implementation.git
 cd Vision-Language-Action-Implementation
 
 # 2. Download model weights (Volume-mounted for speed)
@@ -127,4 +127,21 @@ colours = {
     "yellow_cube": ([1, 0.9, 0, 1],  "cube"),
 }
 ```
-*Note: Due to our robust procedural randomized area constraints, no matter how many items you add, they'll dynamically shift to avoid overlapping physics anomalies!*
+*Note: Due to robust procedural randomized area constraints, no matter how many items we add, they'll dynamically shift to avoid overlapping physics anomalies!*
+
+
+## ⚠️ Troubleshooting & Ongoing Fixes
+### Grounding DINO _C Extension Build Failure
+    Symptoms: ImportError: cannot import name '_C' from 'groundingdino' or a massive wall of C++ errors during pip install.
+    Cause: This occurs when the CUDA compiler (nvcc) isn't found or doesn't match the PyTorch version.
+    The Fix: * Docker: Ensure you are using the nvidia/cuda:devel base image, not runtime.
+
+    Local: Run export CUDA_HOME=/usr/local/cuda before installing.
+
+    UV users: Use uv pip install --no-build-isolation to force the compiler to use the local environment's headers.
+
+### Important Note on Docker:
+The Docker environment is currently undergoing optimization. Due to the massive size of the VLA stack (CUDA + PyTorch + Grounding DINO + Ollama), some users may experience disk space exhaustion or extraction hangs during the build process( which it did for me).
+
+## Recommendation:
+Until the container image is slimmed down, please prefer Option A (Local UV Installation). The uv sync method is significantly faster, more stable, and is the primary way to ensure 100% hardware compatibility with your local GPU drivers.
