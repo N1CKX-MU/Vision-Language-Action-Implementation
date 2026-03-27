@@ -30,32 +30,29 @@ A modular robotic pipeline that uses open-vocabulary object detection to perform
 ## 3.2 Option A: Local Development (Linux/WSL2/On Host)
 
 ```bash
-# 1. Install uv (if not already installed)
+
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source $HOME/.cargo/env
 
-# 2. Clone the repository
 git clone https://github.com/N1CKX-MU/Vision-Language-Action-Implementation.git
 cd Vision-Language-Action-Implementation
 
-# 3. Install Ollama and pull reasoning model
 curl -fsSL https://ollama.ai/install.sh | sh
 ollama pull qwen2.5:0.5b
 
-# 4. Sync environment (Note: Requires Python 3.12 or 3.13)
 uv python install 3.12
 uv sync --python 3.12
 
-# 5. Install Grounding DINO (Requires CUDA C++ compilation)
+#  Install Grounding DINO (Requires CUDA C++ compilation)
 uv pip install --no-build-isolation \
   "groundingdino @ git+https://github.com/IDEA-Research/GroundingDINO.git@856dde20aee659246248e20734ef9ba5214f5e44"
 
-# 6. Download Pre-trained Weights
+#  Download Pre-trained Weights
 mkdir -p models/grounding_dino
 wget -P models/grounding_dino/ https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
 wget -P models/grounding_dino/ https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py
 
-# 7. Execute Task
+#  Execute Task
 uv run python run.py --prompt "Pick up the red cube and place it in the blue bowl"
 
 ```
@@ -66,26 +63,25 @@ uv run python run.py --prompt "Pick up the red cube and place it in the blue bow
 Prerequisites: Docker, NVIDIA Container Toolkit.
 
 ```Bash
-# 1. Clone the repo
+
 git clone https://github.com/N1CKX-MU/Vision-Language-Action-Implementation.git
 cd Vision-Language-Action-Implementation
 
-# 2. Download model weights (Volume-mounted for speed)
+# Download model weights (Volume-mounted for speed)
 mkdir -p models/grounding_dino
 wget -O models/grounding_dino/groundingdino_swint_ogc.pth \
   "[https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth](https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth)"
 wget -O models/grounding_dino/GroundingDINO_SwinT_OGC.py \
   "[https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py](https://raw.githubusercontent.com/IDEA-Research/GroundingDINO/main/groundingdino/config/GroundingDINO_SwinT_OGC.py)"
 
-# 3. Enable GUI forwarding
+
 xhost +local:docker
 
-# 4. Build the image
+# Build the image
 # This compiles CUDA operators and bakes Qwen 2.5 into the image (~15-20 min)
 make build
 
-# 5. Execute the VLA Task
-# The container automatically starts the Ollama server internally
+# Execute the VLA Task
 make run PROMPT="Pick up the red cube and place it in the blue bowl"
 
 # Alternative: Open an interactive shell
